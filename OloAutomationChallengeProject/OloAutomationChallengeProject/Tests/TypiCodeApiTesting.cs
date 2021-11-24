@@ -1,3 +1,5 @@
+using ChoETL;
+using Microsoft.VisualBasic.FileIO;
 using Newtonsoft.Json;
 using NJsonSchema;
 using NUnit.Framework;
@@ -7,6 +9,7 @@ using OloAutomationChallengeProject.Reports;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace OloAutomationChallengeProject
@@ -15,7 +18,7 @@ namespace OloAutomationChallengeProject
     {
         public TestContext TestContext { get; set; }
         Factory factory = new Factory();
-        RequestHelpers requestHelpers = new RequestHelpers();
+        HttpRequestHelpers requestHelpers = new HttpRequestHelpers();
 
         /// <summary>
         /// This will Setup the Report for the Test
@@ -45,7 +48,7 @@ namespace OloAutomationChallengeProject
         public async Task TestGetRequestAsync()
         {
             List<User> users = new List<User>();
-            RequestHelpers requestHelpers = new RequestHelpers();
+            HttpRequestHelpers requestHelpers = new HttpRequestHelpers();
             var url = requestHelpers.SetupUrl("https://jsonplaceholder.typicode.com/", "posts");
 
             var resquest = await requestHelpers.CreateGetRequestAsync(url);
@@ -61,7 +64,7 @@ namespace OloAutomationChallengeProject
         public async Task TestGetRequestSingleRecordAsync()
         {
             List<User> users = new List<User>();
-            RequestHelpers requestHelpers = new RequestHelpers();
+            HttpRequestHelpers requestHelpers = new HttpRequestHelpers();
             var url = requestHelpers.SetupUrl("https://jsonplaceholder.typicode.com/", "comments?postId=1");
 
             var resquest = await requestHelpers.CreateGetRequestAsync(url);
@@ -77,7 +80,7 @@ namespace OloAutomationChallengeProject
         public async Task TestBadGetRequestStatusCodeAsync()
         {
             List<User> users = new List<User>();
-            RequestHelpers requestHelpers = new RequestHelpers();
+            HttpRequestHelpers requestHelpers = new HttpRequestHelpers();
             var url = requestHelpers.SetupUrl("https://jsonplaceholder.typicode.com/", "posts");
 
             var resquest = await requestHelpers.CreateGetRequestAsync(url);
@@ -171,7 +174,7 @@ namespace OloAutomationChallengeProject
         /// </summary>
         /// <returns></returns>
         [Test]
-        public async Task TestSuccessfulDeleteRequestAsync()
+        public async Task TestDeleteRequestAsync()
         {
             var url = factory.CreateNewRequestHelpers().SetupUrl("https://jsonplaceholder.typicode.com/", "posts/1");
             var result = await requestHelpers.CreateDeleteRequestASynch(url);
@@ -188,6 +191,36 @@ namespace OloAutomationChallengeProject
             var url = factory.CreateNewRequestHelpers().SetupUrl("https://jsonplaceholder.typicode.com/", "posts/1");
             var result = await requestHelpers.CreateDeleteRequestASynch(url);
             Assert.IsTrue((int)result.StatusCode == 200);
+        }
+
+        /// <summary>
+        /// Test Uploading a record using a POST request https://jsonplaceholder.typicode.com/posts/20/comments
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+        public async Task TestPostRequestCommentsURLAsync()
+        {
+            var fileManagementHelper = factory.CreateNewFileManagementHelper();
+            var path = fileManagementHelper.GetDataFilePath("TestData", "TypicodeRecord.csv" +
+                "");
+
+            StringBuilder sb = new StringBuilder();
+            using (TextFieldParser parser = new TextFieldParser(path))
+            {
+                var csv = parser.ReadToEnd();
+                var p = ChoCSVReader.LoadText(csv)
+                .WithFirstLineHeader();
+
+                using (var w = new ChoJSONWriter(sb))
+                    w.Write(p);
+            }
+
+            var url = factory.CreateNewRequestHelpers()
+                .SetupUrl("https://jsonplaceholder.typicode.com/", "posts/20/comments");
+
+            //var result = await requestHelpers.CreatePostRequestAsync(url, user);
+            var result = await requestHelpers.CreatePostRequestAsync(url, sb);
+            Assert.IsTrue((int)result.StatusCode == 201);
         }
     }
 }

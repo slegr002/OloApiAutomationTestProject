@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace OloAutomationChallengeProject.Helpers
 {
-    public class RequestHelpers
+    public class HttpRequestHelpers
     {
         Factory factory = new Factory();
 
@@ -58,7 +58,7 @@ namespace OloAutomationChallengeProject.Helpers
         /// <param name="url"></param>
         /// <param name="user"></param>
         /// <returns>HttpResponseMessage</returns>
-        public async Task<HttpResponseMessage> CreatePostRequestAsync(string url, object user)
+        public async Task<HttpResponseMessage> CreatePostRequestAsync(string url, dynamic user)
         {
             var convertedJsonData = JsonConvert.SerializeObject(user);
             var data = new StringContent(convertedJsonData, Encoding.UTF8, "application/json");
