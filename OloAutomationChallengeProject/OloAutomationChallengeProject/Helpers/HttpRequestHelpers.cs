@@ -14,18 +14,6 @@ namespace OloAutomationChallengeProject.Helpers
         Factory factory = new Factory();
 
         /// <summary>
-        /// Setting up the URL used for Http Requests
-        /// </summary>
-        /// <param name="baseUrl"></param>
-        /// <param name="endpoint"></param>
-        /// <returns>string</returns>
-        public string SetupUrl(string baseUrl, string endpoint)
-        {
-            var url = Path.Combine(baseUrl, endpoint);
-            return url;
-        }
-
-        /// <summary>
         /// Makes an Http GET Request using the HttpClient
         /// </summary>
         /// <param name="url"></param>
@@ -48,8 +36,7 @@ namespace OloAutomationChallengeProject.Helpers
         {
             using var content = response.Content;
             var responseBody = await content.ReadAsStringAsync();
-
-            return JsonConvert.DeserializeObject<T>(responseBody);
+            return ContentConversionHandler.DeserializeJson<T>(responseBody);
         }
 
         /// <summary>
