@@ -55,7 +55,8 @@ namespace OloAutomationChallengeProject.Helpers
             var response = await client.PostAsync(url, data);
             return response;
         }
-
+        
+        //TODO: fix deserialized methodf
         /// <summary>
         /// Makes a Http PUT Request using the HttpClient
         /// </summary>
@@ -64,7 +65,7 @@ namespace OloAutomationChallengeProject.Helpers
         /// <returns>HttpResponseMessage</returns>
         public async Task<HttpResponseMessage> CreatePUTRequestAsync(string url, object user)
         {
-            var convertedJsonData = JsonConvert.SerializeObject(user);
+            var convertedJsonData = ContentConversionHandler.SerializeJson(user);
             var data = new StringContent(convertedJsonData, Encoding.UTF8, "application/json");
 
             var client = factory.CreateNewClient();
