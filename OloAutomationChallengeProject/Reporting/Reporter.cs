@@ -6,7 +6,7 @@ using System.Text;
 
 namespace OloAutomationChallengeProject.Reports
 {
-    //This class will setup Extent Report for the Project
+    //This class will setup Extent Report for the Test 
     
     public static class Reporter
     {

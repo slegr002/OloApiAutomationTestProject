@@ -1,15 +1,15 @@
-using ChoETL;
-using Microsoft.VisualBasic.FileIO;
+using AventStack.ExtentReports;
 using Newtonsoft.Json;
 using NJsonSchema;
 using NUnit.Framework;
+using NUnit.Framework.Interfaces;
 using OloAutomationChallengeProject.Helpers;
 using OloAutomationChallengeProject.Models;
 using OloAutomationChallengeProject.Reports;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace OloAutomationChallengeProject
@@ -18,26 +18,44 @@ namespace OloAutomationChallengeProject
     {
         public TestContext TestContext { get; set; }
         Factory factory = new Factory();
-        HttpRequestHelpers requestHelpers = new HttpRequestHelpers();
+        RequestHelpers requestHelpers = new RequestHelpers();
 
-        /// <summary>
-        /// This will Setup the Report for the Test
-        /// </summary>
-        /// <param name="testContext"></param>
-        public static void SetupReport(TestContext testContext)
+        [OneTimeSetUp]
+        public void OneTimeSetup()
         {
-            var dir = testContext.TestDirectory;
-            Reporter.SetUpReport(dir, "SmokeTest", "Smoke test result");
+            var reportPath = Path.Combine(Directory.GetParent(@"../../../").ToString(), @"Reporting\");
+            Reporter.SetUpReport(reportPath, "SmokeTest", "Smoke test result");
+            Reporter.CreateTest(TestContext.CurrentContext.Test.Name);
         }
-
-        /*public void SetUpTest()
-        {
-            Reporter.CreateTest();
-        }*/
 
         [SetUp]
         public void Setup()
         {
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Reporter.CreateTest(TestContext.CurrentContext.Test.Name);
+            var tesStatus = TestContext.CurrentContext.Result.Outcome.Status;
+            switch (tesStatus)
+            {
+                case TestStatus.Failed:
+                    Reporter.LogToReport(Status.Info, TestContext.CurrentContext.Result.Message);
+                    break;
+                case TestStatus.Passed:
+                    Reporter.LogToReport(Status.Info, "Pass");
+                    break;
+                case TestStatus.Inconclusive:
+                    Reporter.LogToReport(Status.Info, "Inconclusive");
+                    break;
+                case TestStatus.Skipped:
+                    Reporter.LogToReport(Status.Info, "Skip");
+                    break;
+                default:
+                    break;
+            }
+            Reporter.FlushReport();
         }
 
         /// <summary>
@@ -48,8 +66,8 @@ namespace OloAutomationChallengeProject
         public async Task TestGetRequestAsync()
         {
             List<User> users = new List<User>();
-            HttpRequestHelpers requestHelpers = new HttpRequestHelpers();
-            var url = factory.CreateNewFileManagementHelper().SetupUrl("https://jsonplaceholder.typicode.com/", "posts");
+            RequestHelpers requestHelpers = new RequestHelpers();
+            var url = requestHelpers.SetupUrl("https://jsonplaceholder.typicode.com/", "posts");
 
             var resquest = await requestHelpers.CreateGetRequestAsync(url);
             var responseContent = await requestHelpers.GetResponseContentAsync<List<User>>(resquest);
@@ -64,8 +82,8 @@ namespace OloAutomationChallengeProject
         public async Task TestGetRequestSingleRecordAsync()
         {
             List<User> users = new List<User>();
-            HttpRequestHelpers requestHelpers = new HttpRequestHelpers();
-            var url = factory.CreateNewFileManagementHelper().SetupUrl("https://jsonplaceholder.typicode.com/", "comments?postId=1");
+            RequestHelpers requestHelpers = new RequestHelpers();
+            var url = requestHelpers.SetupUrl("https://jsonplaceholder.typicode.com/", "comments?postId=1");
 
             var resquest = await requestHelpers.CreateGetRequestAsync(url);
             var responseContent = await requestHelpers.GetResponseContentAsync<List<User>>(resquest);
@@ -80,8 +98,8 @@ namespace OloAutomationChallengeProject
         public async Task TestBadGetRequestStatusCodeAsync()
         {
             List<User> users = new List<User>();
-            HttpRequestHelpers requestHelpers = new HttpRequestHelpers();
-            var url = factory.CreateNewFileManagementHelper().SetupUrl("https://jsonplaceholder.typicode.com/", "posts");
+            RequestHelpers requestHelpers = new RequestHelpers();
+            var url = requestHelpers.SetupUrl("https://jsonplaceholder.typicode.com/", "posts");
 
             var resquest = await requestHelpers.CreateGetRequestAsync(url);
             var responseContent = await requestHelpers.GetResponseContentAsync<List<User>>(resquest);
@@ -109,7 +127,7 @@ namespace OloAutomationChallengeProject
             user.Title = "Test";
             user.body = "Testing";
 
-            var url = factory.CreateNewFileManagementHelper()
+            var url = factory.CreateNewRequestHelpers()
                 .SetupUrl("https://jsonplaceholder.typicode.com/", "posts");
 
             var result = await requestHelpers.CreatePostRequestAsync(url, user);
@@ -128,7 +146,7 @@ namespace OloAutomationChallengeProject
             user.Title = "TestPost";
             user.body = "TestingPost";
 
-            var url = factory.CreateNewFileManagementHelper()
+            var url = factory.CreateNewRequestHelpers()
                 .SetupUrl("https://jsonplaceholder.typicode.com/", "X");
 
             var result = await requestHelpers.CreatePostRequestAsync(url, user);
@@ -147,7 +165,7 @@ namespace OloAutomationChallengeProject
             user.Title = "TestPut";
             user.body = "TestingPut";
 
-            var url = factory.CreateNewFileManagementHelper().SetupUrl("https://jsonplaceholder.typicode.com/", "posts/1");
+            var url = factory.CreateNewRequestHelpers().SetupUrl("https://jsonplaceholder.typicode.com/", "posts/1");
             var result = await requestHelpers.CreatePUTRequestAsync(url, user);
             Assert.IsTrue((int)result.StatusCode == 200);
         }
@@ -164,7 +182,7 @@ namespace OloAutomationChallengeProject
             user.Title = "TestPut";
             user.body = "TestingPut";
 
-            var url = factory.CreateNewFileManagementHelper().SetupUrl("https://jsonplaceholder.typicode.com/", "posts/A");
+            var url = factory.CreateNewRequestHelpers().SetupUrl("https://jsonplaceholder.typicode.com/", "posts/A");
             var result = await requestHelpers.CreatePUTRequestAsync(url, user);
             Assert.IsTrue((int)result.StatusCode == 500);
         }
@@ -174,9 +192,9 @@ namespace OloAutomationChallengeProject
         /// </summary>
         /// <returns></returns>
         [Test]
-        public async Task TestDeleteRequestAsync()
+        public async Task TestSuccessfulDeleteRequestAsync()
         {
-            var url = factory.CreateNewFileManagementHelper().SetupUrl("https://jsonplaceholder.typicode.com/", "posts/1");
+            var url = factory.CreateNewRequestHelpers().SetupUrl("https://jsonplaceholder.typicode.com/", "posts/1");
             var result = await requestHelpers.CreateDeleteRequestASynch(url);
             Assert.IsTrue((int)result.StatusCode == 200);
         }
@@ -188,37 +206,10 @@ namespace OloAutomationChallengeProject
         [Test]
         public async Task TestBadDeleteRequestAsync()
         {
-            var url = factory.CreateNewFileManagementHelper().SetupUrl("https://jsonplaceholder.typicode.com/", "posts/1");
+            //var url = factory.CreateNewRequestHelpers().SetupUrl("https://jsonplaceholder.typicode.com/", "posts/1");
+            var url = factory.CreateNewRequestHelpers().SetupUrl("https://jsonplaceholder.typicode.com/", "x");
             var result = await requestHelpers.CreateDeleteRequestASynch(url);
-            Assert.IsTrue((int)result.StatusCode == 200);
-        }
-
-        /// <summary>
-        /// Test Uploading a record using a POST request https://jsonplaceholder.typicode.com/posts/20/comments
-        /// </summary>
-        /// <returns></returns>
-        [Test]
-        public async Task TestPostRequestCommentsURLAsync()
-        {
-            var fileManagementHelper = factory.CreateNewFileManagementHelper();
-            var path = fileManagementHelper.GetDataFilePath("TestData", "TypicodeRecord.csv");
-
-            StringBuilder sb = new StringBuilder();
-            using (TextFieldParser parser = new TextFieldParser(path))
-            {
-                var csv = parser.ReadToEnd();
-                var p = ChoCSVReader.LoadText(csv)
-                .WithFirstLineHeader();
-
-                using (var w = new ChoJSONWriter(sb))
-                    w.Write(p);
-            }
-
-            var url = factory.CreateNewFileManagementHelper()
-                .SetupUrl("https://jsonplaceholder.typicode.com/", "posts/20/comments");
-
-            var result = await requestHelpers.CreatePostRequestAsync(url, sb);
-            Assert.IsTrue((int)result.StatusCode == 201);
+            Assert.IsTrue((int)result.StatusCode == 404);
         }
     }
 }

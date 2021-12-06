@@ -11,8 +11,7 @@ namespace OloAutomationChallengeProject
     {
         private HttpClient client;
         private User user;
-        private HttpRequestHelpers requestHelpers;
-        private FileManagementHelper fileManagementHelper;
+        private RequestHelpers requestHelpers;
         public HttpClient CreateNewClient()
         {
             return client = new HttpClient();
@@ -23,14 +22,9 @@ namespace OloAutomationChallengeProject
             return user = new User();
         }
 
-        public HttpRequestHelpers CreateNewRequestHelpers()
+        public RequestHelpers CreateNewRequestHelpers()
         {
-            return requestHelpers = new HttpRequestHelpers();
-        }
-
-        public FileManagementHelper CreateNewFileManagementHelper()
-        {
-            return fileManagementHelper = new FileManagementHelper();
+            return requestHelpers = new RequestHelpers();
         }
     }
 }
