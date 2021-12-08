@@ -3,7 +3,7 @@
     <configuration>
         <!-- report theme -->
         <!-- standard, dark -->
-        <theme>standard</theme>
+        <theme>dark</theme>
     
         <!-- viewstyle -->
         <!-- alt-view -->
@@ -24,10 +24,10 @@
         <enableTimeline>true</enableTimeline>
         
         <!-- title of the document -->
-        <documentTitle>Extent Framework</documentTitle>
+        <documentTitle>TypiCode Test Framework</documentTitle>
         
         <!-- report name - displayed at top-nav -->
-        <reportName>Build 1</reportName>
+        <reportName>Typicode Api Smoke Test Report</reportName>
 
 		<!-- timestamp format -->
 		<timeStampFormat>MMM dd, yyyy HH:mm:ss</timeStampFormat>

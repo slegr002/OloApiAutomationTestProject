@@ -23,8 +23,9 @@ namespace OloAutomationChallengeProject
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
+            var extentConfPath = Path.Combine(Directory.GetParent(@"../../../").ToString(), @"Reporting\extent-config.xml");
             var reportPath = Path.Combine(Directory.GetParent(@"../../../").ToString(), @"Reporting\");
-            Reporter.SetUpReport(reportPath, "SmokeTest", "Smoke test result");
+            Reporter.SetUpReport(reportPath, extentConfPath, "SmokeTest", "Smoke test result");
             Reporter.CreateTest(TestContext.CurrentContext.Test.Name);
         }
 
@@ -37,11 +38,14 @@ namespace OloAutomationChallengeProject
         public void TearDown()
         {
             Reporter.CreateTest(TestContext.CurrentContext.Test.Name);
+            var stacktrace = string.IsNullOrEmpty(TestContext.CurrentContext.Result.StackTrace) ? "" 
+                : string.Format("{0}", TestContext.CurrentContext.Result.StackTrace);
+
             var tesStatus = TestContext.CurrentContext.Result.Outcome.Status;
             switch (tesStatus)
             {
                 case TestStatus.Failed:
-                    Reporter.LogToReport(Status.Info, TestContext.CurrentContext.Result.Message);
+                    Reporter.LogToReport(Status.Info, stacktrace);
                     break;
                 case TestStatus.Passed:
                     Reporter.LogToReport(Status.Info, "Pass");
@@ -206,7 +210,6 @@ namespace OloAutomationChallengeProject
         [Test]
         public async Task TestBadDeleteRequestAsync()
         {
-            //var url = factory.CreateNewRequestHelpers().SetupUrl("https://jsonplaceholder.typicode.com/", "posts/1");
             var url = factory.CreateNewRequestHelpers().SetupUrl("https://jsonplaceholder.typicode.com/", "x");
             var result = await requestHelpers.CreateDeleteRequestASynch(url);
             Assert.IsTrue((int)result.StatusCode == 404);
