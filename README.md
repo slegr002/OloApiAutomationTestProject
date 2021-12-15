@@ -12,7 +12,7 @@ Olo Typicode API Automation
 - But, I noticed that the API has some issues where it's returning a Status Code 200 when I enter a bad URL for some of my negative test
 - I did not finish setting up all the negative test I wanted to do
 - I did not finish organizing the project structure
-- I did not finish setup Reporting which I used Extent Report. The report is being generated, but the configurtions are hardcoded. I need to setup the extent-congig.xml file
+- I did finish setting up Reporting which I used Extent Report. The report is being generated and using extent-config.xml file for the configurtions.
 	
 ## Technologies
 - Visual Studio 2019 IDE
