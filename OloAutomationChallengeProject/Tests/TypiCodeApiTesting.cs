@@ -1,15 +1,13 @@
 using AventStack.ExtentReports;
-using Newtonsoft.Json;
-using NJsonSchema;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using OloAutomationChallengeProject.Helpers;
 using OloAutomationChallengeProject.Models;
 using OloAutomationChallengeProject.Reports;
-using System;
+using OloAutomationChallengeProject.Test_Models;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace OloAutomationChallengeProject
@@ -23,8 +21,13 @@ namespace OloAutomationChallengeProject
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
+            //Setting up the path where the Extent Configuration File is consumed
             var extentConfPath = Path.Combine(Directory.GetParent(@"../../../").ToString(), @"Reporting\extent-config.xml");
+
+            //Setting the path to where the extent html report will be created
             var reportPath = Path.Combine(Directory.GetParent(@"../../../").ToString(), @"Reporting\");
+
+            //Setting up the Report and creating the test for the Report
             Reporter.SetUpReport(reportPath, extentConfPath, "SmokeTest", "Smoke test result");
             Reporter.CreateTest(TestContext.CurrentContext.Test.Name);
         }
@@ -45,7 +48,7 @@ namespace OloAutomationChallengeProject
             switch (tesStatus)
             {
                 case TestStatus.Failed:
-                    Reporter.LogToReport(Status.Info, stacktrace);
+                    Reporter.LogToReport(Status.Info, "Failed");
                     break;
                 case TestStatus.Passed:
                     Reporter.LogToReport(Status.Info, "Pass");
@@ -73,9 +76,25 @@ namespace OloAutomationChallengeProject
             RequestHelpers requestHelpers = new RequestHelpers();
             var url = requestHelpers.SetupUrl("https://jsonplaceholder.typicode.com/", "posts");
 
-            var resquest = await requestHelpers.CreateGetRequestAsync(url);
-            var responseContent = await requestHelpers.GetResponseContentAsync<List<User>>(resquest);
-            Assert.IsTrue((int)resquest.StatusCode == 200);
+            var request = await requestHelpers.CreateGetRequestAsync(url);
+            var responseContent = await requestHelpers.GetResponseContentAsync<List<User>>(request);
+            Assert.IsTrue((int)request.StatusCode == 200);
+        }
+
+        /// <summary>
+        /// This test validates that the Server Name is correct 
+        /// </summary>
+        /// <returns></returns>
+        [Test]
+        public async Task TestGetRequestResponseHeaderValue()
+        {
+            List<User> userComments = new List<User>();
+            RequestHelpers requestHelpers = new RequestHelpers();
+            var url = requestHelpers.SetupUrl("https://jsonplaceholder.typicode.com/", "posts");
+
+            var request = await requestHelpers.CreateGetRequestAsync(url);
+            var responseHeaderValue = request.Headers.GetValues("Server").FirstOrDefault();
+            Assert.IsTrue(responseHeaderValue.Equals("cloudflare"));
         }
 
         /// <summary>
@@ -85,13 +104,28 @@ namespace OloAutomationChallengeProject
         [Test]
         public async Task TestGetRequestSingleRecordAsync()
         {
-            List<User> users = new List<User>();
+            List<UserComment> usersComment = new List<UserComment>();
             RequestHelpers requestHelpers = new RequestHelpers();
             var url = requestHelpers.SetupUrl("https://jsonplaceholder.typicode.com/", "comments?postId=1");
 
             var resquest = await requestHelpers.CreateGetRequestAsync(url);
-            var responseContent = await requestHelpers.GetResponseContentAsync<List<User>>(resquest);
+            var responseContent = await requestHelpers.GetResponseContentAsync<List<UserComment>>(resquest);
             Assert.IsTrue((int)resquest.StatusCode == 200);
+        }      
+
+        [Test]
+        public async Task TestGetRequestValidateValue()
+        {
+            List<UserComment> userComments = new List<UserComment>();
+            RequestHelpers requestHelpers = new RequestHelpers();
+            var url = requestHelpers.SetupUrl("https://jsonplaceholder.typicode.com/", "comments?postId=1");
+
+            var request = await requestHelpers.CreateGetRequestAsync(url);
+            var responseContent = await requestHelpers.GetResponseContentAsync<List<UserComment>>(request);
+            var nameValue = responseContent.Select(x => x).Where(y => y.Id == 5);
+            var stringValue = nameValue.Select(x => x.Name).Single();
+            //TODO:Refactor Test Reprot to handle Test when not Asserting Status code
+            Assert.IsTrue((nameValue.Select(x => x.Name).Single()) == "vero eaque aliquid doloribus et culpa");
         }
 
         /// <summary>
@@ -135,7 +169,14 @@ namespace OloAutomationChallengeProject
                 .SetupUrl("https://jsonplaceholder.typicode.com/", "posts");
 
             var result = await requestHelpers.CreatePostRequestAsync(url, user);
+
+            var responseContent = await requestHelpers.GetResponseContentAsync<List<User>>(result);
+            var record = responseContent.Select(x => x).Where(y => y.Id == 40).FirstOrDefault();
+
             Assert.IsTrue((int)result.StatusCode == 201);
+            Assert.IsNotNull(record);
+            Assert.IsTrue((record.Title.Equals("Test")));
+            Assert.IsTrue((record.body.Equals("Testing")));   
         }
 
         /// <summary>

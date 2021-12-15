@@ -21,12 +21,21 @@ namespace OloAutomationChallengeProject.Reports
         /// <param name="reportConfPath"></param>
         /// <param name="documentTitle"></param>
         /// <param name="reportName"></param>
-        public static void SetUpReport(dynamic path, string reportConfPath, string documentTitle, string reportName)
+        public static void SetUpReport(string path, string reportConfPath, string documentTitle, string reportName)
         {
             htmlReporter = new ExtentHtmlReporter(path);
             htmlReporter.LoadConfig(reportConfPath);
             extentReport = new ExtentReports();
             extentReport.AttachReporter(htmlReporter);
+        }
+
+        /// <summary>
+        /// Method used for setting the test name and test description (optional)
+        /// </summary>
+        /// <param name="testName"></param>
+        public static void CreateTest(string testName)
+        {
+            extentTest = extentReport.CreateTest(testName);
         }
 
         /// <summary>
@@ -37,14 +46,6 @@ namespace OloAutomationChallengeProject.Reports
         public static void LogToReport(Status status, string message)
         {
             extentTest.Log(status, message);
-        }
-        /// <summary>
-        /// Method used for setting the test name and test description (optional)
-        /// </summary>
-        /// <param name="testName"></param>
-        public static void CreateTest(string testName)
-        {
-            extentTest = extentReport.CreateTest(testName);
         }
 
         /// <summary>
