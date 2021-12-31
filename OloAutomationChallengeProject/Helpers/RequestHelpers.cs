@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace OloAutomationChallengeProject.Helpers
 {
-    public class RequestHelpers : IRequestHelpers
+    public class RequestHelpers 
     {
         Factory factory = new Factory();
         public RequestHelpers()

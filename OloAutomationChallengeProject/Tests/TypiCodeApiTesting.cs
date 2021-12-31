@@ -1,10 +1,12 @@
 using AventStack.ExtentReports;
+using NJsonSchema;
 using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using OloAutomationChallengeProject.Helpers;
 using OloAutomationChallengeProject.Models;
 using OloAutomationChallengeProject.Reports;
 using OloAutomationChallengeProject.Test_Models;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -30,6 +32,9 @@ namespace OloAutomationChallengeProject
             //Setting up the Report and creating the test for the Report
             Reporter.SetUpReport(reportPath, extentConfPath, "SmokeTest", "Smoke test result");
             Reporter.CreateTest(TestContext.CurrentContext.Test.Name);
+
+            //Setting the path to the Schema Json file
+            var SchemaPath = Path.Combine(Directory.GetParent(@"../../../").ToString(),@"TestData\TypicodeScheme.json");
         }
 
         [SetUp]
@@ -48,7 +53,7 @@ namespace OloAutomationChallengeProject
             switch (tesStatus)
             {
                 case TestStatus.Failed:
-                    Reporter.LogToReport(Status.Info, "Failed");
+                    Reporter.LogToReport(Status.Info, stacktrace);
                     break;
                 case TestStatus.Passed:
                     Reporter.LogToReport(Status.Info, "Pass");
@@ -72,7 +77,6 @@ namespace OloAutomationChallengeProject
         [Test]
         public async Task TestGetRequestAsync()
         {
-            List<User> users = new List<User>();
             RequestHelpers requestHelpers = new RequestHelpers();
             var url = requestHelpers.SetupUrl("https://jsonplaceholder.typicode.com/", "posts");
 
@@ -150,7 +154,23 @@ namespace OloAutomationChallengeProject
         /// <returns></returns>
         [Test]
         public async Task TestGetRequestSchemaAsync() 
-        {       
+        {
+            //Making the HttpRequest
+            RequestHelpers requestHelpers = new RequestHelpers();
+            var url = requestHelpers.SetupUrl("https://jsonplaceholder.typicode.com/", "posts");
+
+            var request = await requestHelpers.CreateGetRequestAsync(url);
+            var jsonFile = await request.Content.ReadAsStringAsync();
+
+            //Setting the path to the Schema Json file
+            var SchemaPath = Path.Combine(
+                Directory.GetParent(@"../../../").ToString(), @"TestData\TypicodeSchema.json");
+
+            //Deserializing the json string to a schema and validating the json file
+            var schema = await JsonSchema.FromJsonAsync(File.ReadAllText(SchemaPath));
+            var errors = schema.Validate(jsonFile);
+
+            Assert.IsEmpty(schema.Validate(jsonFile));
         }
 
         /// <summary>
@@ -168,15 +188,18 @@ namespace OloAutomationChallengeProject
             var url = factory.CreateNewRequestHelpers()
                 .SetupUrl("https://jsonplaceholder.typicode.com/", "posts");
 
-            var result = await requestHelpers.CreatePostRequestAsync(url, user);
+            var postRequestSingleUser = await requestHelpers.CreatePostRequestAsync(url, user);
+            Assert.IsTrue((int)postRequestSingleUser.StatusCode == 201);
 
-            var responseContent = await requestHelpers.GetResponseContentAsync<List<User>>(result);
+            //Get Request to verify that the record was created
+            var postRequestAllUser = await requestHelpers.CreateGetRequestAsync(url);
+
+            var responseContent = await requestHelpers.GetResponseContentAsync<List<User>>(postRequestAllUser);
             var record = responseContent.Select(x => x).Where(y => y.Id == 40).FirstOrDefault();
 
-            Assert.IsTrue((int)result.StatusCode == 201);
-            Assert.IsNotNull(record);
-            Assert.IsTrue((record.Title.Equals("Test")));
-            Assert.IsTrue((record.body.Equals("Testing")));   
+            Assert.IsTrue((int)postRequestAllUser.StatusCode == 200);
+            Assert.IsTrue((record.Title.Equals("enim quo cumque")));
+            Assert.IsTrue((record.body.Equals("ut voluptatum aliquid illo tenetur nemo sequi quo facilis\nipsum rem optio mollitia quas\nvoluptatem eum voluptas qui\nunde omnis voluptatem iure quasi maxime voluptas nam")));
         }
 
         /// <summary>
